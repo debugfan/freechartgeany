@@ -1,0 +1,38 @@
+name: freechartgeany
+version: 2.0.3-1snap
+summary: Free Chart Geany
+description: Technical analysis software for stocks and other financial instruments
+
+apps:
+  app:
+    command: launcher
+    plugs: [x11, network, network-bind, unity7, opengl]
+
+parts:
+  freechartgeany:
+    plugin: qmake-qt4
+    source: .
+    build-packages:
+      - qt4-qmake
+      - libqt4-dev
+      - libqtwebkit-dev
+      - libssl-dev
+      - qt4-default
+
+    stage-packages:
+      - libqt4-network
+      - libqtwebkit4
+      - libssl1.0.0
+      - libgtk2.0-0
+      - arora
+      
+    snap:
+      - -usr/share/doc
+      - -usr/include
+      
+  environment:
+    plugin: copy
+    files:
+      xdg-open: usr/bin/xdg-open
+      launcher: bin/launcher
+          

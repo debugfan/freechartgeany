@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=2.0.3
+Type=Application
+Terminal=false
+Name=FreeChartGeany
+Comment=Open Source Technical Analysis Software
+Categories=Office;
+Exec=freechartgeany.app
+Icon=${SNAP}/meta/gui/logo64.png
+StartupNotify=true
+
