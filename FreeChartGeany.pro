@@ -1,5 +1,5 @@
 QT       += core gui network webkit
-CONFIG	 += release
+#CONFIG	 += release
 DEFINES  *= QT_NO_DEBUG_OUTPUT
 DEFINES  *= QT_USE_QSTRINGBUILDER
 TEMPLATE  = app

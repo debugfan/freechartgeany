@@ -45,3 +45,15 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Custom
+moc
+debug
+release
+obj
+ui
+*.pro.user
+*.Debug
+*.Release
+Makefile
+
