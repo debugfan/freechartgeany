@@ -24,6 +24,7 @@
 #include "common.h"
 #include "feedyahoo.h"
 #include "feedgoogle.h"
+#include "feedifeng.h"
 
 // constructor
 DownloadDataDialog::DownloadDataDialog (QWidget * parent):
@@ -216,6 +217,58 @@ DownloadDataDialog::downloadGoogleControl ()
     showMessage (errorMessage (result));
 }
 
+///
+void
+DownloadDataDialog::checkIfengsymbolExistence ()
+{
+  IfengFeed IFF;
+  QString name = "", market = "", symbol = "";
+
+  GlobalError = CG_ERR_OK;
+  ui->nameEdit->setText ("");
+  symbol = ui->symbolEdit->text ();
+  if (symbol.size () == 0)
+    return;
+
+  widgetsSetEnabled (false);
+  ui->checkButton->setText ("Checking");
+  exists = IFF.symbolExistence (symbol, name, market);
+  ui->symbolEdit->setText (symbol);
+  ui->checkButton->setText ("Check");
+  widgetsSetEnabled (true);
+
+  if (exists)
+  {
+    ui->nameEdit->setText (name);
+    ui->marketEdit->setText (market);
+    return;
+  }
+
+  if (GlobalError != CG_ERR_OK)
+    showMessage (errorMessage (GlobalError));
+  else
+    showMessage ("Symbol not found");
+}
+
+// download data from google
+void
+DownloadDataDialog::downloadIfengControl ()
+{
+  IfengFeed IFF;
+  CG_ERR_RESULT result;
+
+  result = IFF.downloadData (ui->symbolEdit->text (),
+                            "DAY",
+                            ui->currencyComboBox->currentText (),
+                            "DOWNLOAD",
+                            ui->adjustCheckBox->isChecked ());
+
+  if (result == CG_ERR_OK)
+    showMessage ("Import completed");
+  else
+    showMessage (errorMessage (result));
+}
+
 /// Common functions
 // enable/disable widgets during download
 void
@@ -247,6 +300,8 @@ DownloadDataDialog::checkButton_clicked ()
     checkYahoosymbolExistence ();
   if (ui->datafeedsComboBox->currentText () == "GOOGLE")
     checkGooglesymbolExistence ();
+  if (ui->datafeedsComboBox->currentText () == "IFENG")
+    checkIfengsymbolExistence ();
   widgetsSetEnabled (true);
   QApplication::restoreOverrideCursor();
 }
@@ -273,6 +328,8 @@ DownloadDataDialog::accept ()
     downloadYahooControl ();
   if (ui->datafeedsComboBox->currentText () == "GOOGLE")
     downloadGoogleControl ();
+  if (ui->datafeedsComboBox->currentText () == "IFENG")
+    downloadIfengControl ();
   
   QApplication::restoreOverrideCursor();
   widgetsSetEnabled (true);

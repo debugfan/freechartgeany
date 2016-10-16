@@ -27,17 +27,17 @@
 #include "common.h"
 #include "libjson.h"
 #include "netservice.h"
-#include "feedgoogle.h"
+#include "feedifeng.h"
 
 // constructor
-GoogleFeed::GoogleFeed (QObject *parent)
+IfengFeed::IfengFeed (QObject *parent)
 {
   if (parent != NULL)
     setParent (parent);
 }
 
 // destructor
-GoogleFeed::~GoogleFeed ()
+IfengFeed::~IfengFeed ()
 {
   
   return;
@@ -45,7 +45,7 @@ GoogleFeed::~GoogleFeed ()
 
 // validate symbol
 bool
-GoogleFeed::validSymbol (QString symbol)
+IfengFeed::validSymbol (QString symbol)
 {
   for (qint32 counter = 0, max = symbol.size ();
               counter < max; counter ++)
@@ -64,21 +64,20 @@ GoogleFeed::validSymbol (QString symbol)
 // return symbol check URL
 // eg: http://www.google.com/finance/info?infotype=infoquoteall&q=C
 QString
-GoogleFeed::symbolURL (QString symbol)
+IfengFeed::symbolURL (QString symbol)
 {
   QString urlstr = "";
 
   if (symbol.size () == 0)
     return urlstr;
 
-  //urlstr = "http://www.google.com/finance/info?infotype=infoquoteall&q=";
   urlstr = "https://www.google.com/finance/info?infotype=infoquoteall&q=";
   urlstr += symbol;
   return urlstr;
 }
 
 QString
-GoogleFeed::realTimePriceURL (QString symbol)
+IfengFeed::realTimePriceURL (QString symbol)
 {
   return symbolURL (symbol);
 }
@@ -87,14 +86,13 @@ GoogleFeed::realTimePriceURL (QString symbol)
 // eg:
 // http://www.google.com/finance/historical?q=c&startdate=Jan+1%2C+2000&output=csv
 QString
-GoogleFeed::downloadURL (QString symbol)
+IfengFeed::downloadURL (QString symbol)
 {
   QString downstr = "";
 
   if (symbol.size () == 0)
     return downstr;
   
-  //downstr = "http://www.google.com/finance/historical?q=";
   downstr = "https://www.google.com/finance/historical?q=";
   downstr += symbol;
   downstr += "&startdate=Jan+1,+2000&output=csv";
@@ -104,14 +102,14 @@ GoogleFeed::downloadURL (QString symbol)
 
 // return update URL
 QString
-GoogleFeed::updateURL (QString symbol)
+IfengFeed::updateURL (QString symbol)
 {
   return downloadURL (symbol);
 }
 
 // get real time price
 CG_ERR_RESULT 
-GoogleFeed::getRealTimePrice (QString symbol, RTPrice & rtprice)
+IfengFeed::getRealTimePrice (QString symbol, RTPrice & rtprice)
 {
   QTemporaryFile tempFile;		// temporary file
   RTPrice realtimeprice;        // real time price
@@ -176,7 +174,7 @@ getRealTimePrice_end:
 
 // check if symbol exists
 bool
-GoogleFeed::symbolExistence (QString & symbol, QString & name, QString & market)
+IfengFeed::symbolExistence (QString & symbol, QString & name, QString & market)
 {
   QTemporaryFile tempFile;		// temporary file
   QTextStream in;	
@@ -254,7 +252,7 @@ symbolExistence_end:
 
 // download historical data
 CG_ERR_RESULT
-GoogleFeed::downloadData (QString symbol, QString timeframe, QString currency, 
+IfengFeed::downloadData (QString symbol, QString timeframe, QString currency,
                          QString task, bool adjust)
 {
   QTemporaryFile tempFile;		// temporary file	

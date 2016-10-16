@@ -335,7 +335,8 @@ SOURCES += 	src/main.cpp \
 		3rdparty/libjson/_internal/Source/JSONWorker.cpp \
 		3rdparty/libjson/_internal/Source/JSONWriter.cpp \
 		3rdparty/libjson/_internal/Source/internalJSONNode.cpp \
-		3rdparty/libjson/_internal/Source/libjson.cpp
+		3rdparty/libjson/_internal/Source/libjson.cpp \
+    src/feedifeng.cpp
 
 
 HEADERS  += 	include/common.h \
@@ -391,7 +392,8 @@ HEADERS  += 	include/common.h \
 		3rdparty/sqlite3/include/sqlite3ext.h \
 		3rdparty/sqlite3/include/sqlite3.h \
 		3rdparty/libjson/JSONOptions.h \
-		3rdparty/libjson/libjson.h
+		3rdparty/libjson/libjson.h \
+    include/feedifeng.h
 
 RESOURCES += 	resources/ChartGeany.qrc
 

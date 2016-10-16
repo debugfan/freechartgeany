@@ -55,6 +55,10 @@ private:
   void checkGooglesymbolExistence ();     // check if symbol exists
   void downloadGoogleControl ();		   // control data download from google
 
+  /// Ifeng finance related function
+  void checkIfengsymbolExistence ();     // check if symbol exists
+  void downloadIfengControl ();		   // control data download from google
+
 private slots:
   void accept ();
   void checkButton_clicked ();

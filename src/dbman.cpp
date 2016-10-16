@@ -1061,6 +1061,7 @@ version7 (AppSettings appsettings)
   SQLCommand += version7_template_alter ("TEMPLATEMODEL");
   foreach (query, templates)
     SQLCommand += version7_template_alter (query);
+  SQLCommand += "INSERT INTO DATAFEEDS_RAW (FEEDNAME, ACTIVE) VALUES ('IFENG', 1);";
   SQLCommand += "UPDATE version SET version=7 WHERE version=6;";
   SQLCommand.append ('\n');
   SQLCommand += "COMMIT;";
