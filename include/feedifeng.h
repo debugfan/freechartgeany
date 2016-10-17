@@ -25,11 +25,22 @@
 
 #include <QObject>
 #include "defs.h"
+#include <QList>
 
 namespace Ui
 {
   class GoogleFeed;
 }
+
+typedef struct {
+    QString date;
+    QString open;
+    QString high;
+    QString low;
+    QString close;
+    QString volumn;
+    QString adj_close;
+} day_price_t;
 
 class IfengFeed: public QObject
 {
@@ -67,6 +78,10 @@ private:
   QString downloadURL (QString symbol); // download URL
   QString updateURL (QString symbol); // update URL
   QString realTimePriceURL (QString symbol); // real time price URL
+  CG_ERR_RESULT rawFile2CSV(QString datafile, QString csvfile);
+  bool parseDayPrice (day_price_t *day_price, void *n1);
+  bool parseDayPriceArray (QList<day_price_t> *day_price_list, void *n1);
+  bool parseJsonData (QString jsonstr, QList<day_price_t> *day_price_list);
 };
 
 #endif // FEEDGOOGLE_H

@@ -575,6 +575,12 @@ csv2sqlite (SymbolEntry *data, QString operation)
 	  data->adjust = false;	
       result = metastock8csv (data->csvfile, tempfilename, symbol);
     }
+
+    if (data->format == "FCG CSV")
+    {
+      data->adjust = false;
+      tempfilename = data->csvfile;
+    }
   }
   
   if (result != CG_ERR_OK)

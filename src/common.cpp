@@ -757,7 +757,8 @@ json_parse (QString jsonstr, QStringList *node, QStringList *value, void *n1)
   i = json_begin(n);
   while (i != json_end(n))
   {
-    if (json_type(*i) == JSON_ARRAY || json_type(*i) == JSON_NODE)
+    char jtype = json_type(*i);
+    if (jtype == JSON_ARRAY || jtype == JSON_NODE)
     {
        if (!json_parse (jsonstr, node, value, *i))
        {

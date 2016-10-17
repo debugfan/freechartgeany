@@ -93,9 +93,17 @@ IfengFeed::downloadURL (QString symbol)
   if (symbol.size () == 0)
     return downstr;
   
-  downstr = "https://www.google.com/finance/historical?q=";
+  downstr = "http://api.finance.ifeng.com/akdaily/?code=";
+  if(symbol.length() > 0) {
+      if(symbol[0] == '5' || symbol[0] == '6' || symbol[0] == '9') {
+          downstr += "sh";
+      }
+      else {
+          downstr += "sz";
+      }
+  }
   downstr += symbol;
-  downstr += "&startdate=Jan+1,+2000&output=csv";
+  downstr += "&type=last";
   
   return downstr;
 }
@@ -250,12 +258,187 @@ symbolExistence_end:
   return result;
 }
 
+bool
+IfengFeed::parseDayPrice (day_price_t *day_price, void *n1)
+{
+    JSONNODE_ITERATOR i;
+    bool result = true;
+    int j;
+    JSONNODE *n;
+
+    n = (JSONNODE *) n1;
+    i = json_begin(n);
+    j = 0;
+    while (i != json_end(n))
+    {
+      char jtype = json_type(*i);
+      if(jtype == JSON_STRING)
+      {
+          json_char *node_value = json_as_string(*i);
+          if(j == 0)
+          {
+              day_price->date = node_value;
+          }
+          else if(j == 1)
+          {
+              day_price->open = node_value;
+          }
+          else if(j == 2)
+          {
+              day_price->high = node_value;
+          }
+          else if(j == 3)
+          {
+              day_price->close = node_value;
+          }
+          else if(j == 4)
+          {
+              day_price->low = node_value;
+          }
+          else if(j == 5)
+          {
+              day_price->volumn = node_value;
+          }
+          json_free(node_value);
+          j++;
+      }
+      i++;
+    }
+
+    day_price->adj_close = day_price->close;
+
+    return result;
+}
+
+bool
+IfengFeed::parseDayPriceArray (QList<day_price_t> *price_list, void *n1)
+{
+  JSONNODE_ITERATOR i;
+  bool result = true;
+  day_price_t day_price;
+  JSONNODE * n;
+
+  n = (JSONNODE *) n1;
+  i = json_begin(n);
+  while (i != json_end(n))
+  {
+    char jtype = json_type(*i);
+    if(jtype == JSON_ARRAY)
+    {
+        parseDayPrice(&day_price, *i);
+        price_list->push_back(day_price);
+    }
+    i++;
+  }
+
+  return result;
+}
+
+bool
+IfengFeed::parseJsonData (QString jsonstr, QList<day_price_t> *price_list)
+{
+  JSONNODE *n = NULL;
+  JSONNODE_ITERATOR i;
+  bool result = true;
+
+  price_list->clear();
+
+  jsonstr.remove (13);
+  jsonstr.remove (10);
+  jsonstr = jsonstr.trimmed ();
+  n = json_parse (jsonstr.toStdString ().c_str());
+  if (n == NULL)
+  {
+      result = false;
+      goto json_parse_end;
+  }
+
+  i = json_begin(n);
+  while (i != json_end(n))
+  {
+    char jtype = json_type(*i);
+    if(jtype == JSON_ARRAY)
+    {
+        json_char *node_name = json_name(*i);
+        if(0 == strcasecmp(node_name, "record"))
+        {
+            parseDayPriceArray(price_list, *i);
+        }
+        json_free(node_name);
+    }
+    i++;
+  }
+
+json_parse_end:
+  if (n != NULL)
+  {
+    json_delete(n);
+  }
+
+  return result;
+}
+
+CG_ERR_RESULT IfengFeed::rawFile2CSV(QString rawfile, QString csvfile)
+{
+    CG_ERR_RESULT retval = CG_ERR_OK;
+    QFile rawdata;
+    QFile csv;
+    QTextStream in;
+    QTextStream out;
+    QString line;
+    QString outputline;
+
+    csv.setFileName(csvfile);
+    if (!csv.open (QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+    {
+        return CG_ERR_OPEN_FILE;
+    }
+    out.setDevice(&csv);
+
+    rawdata.setFileName(rawfile);
+    if (!rawdata.open (QIODevice::ReadOnly|QIODevice::Text))
+    {
+        return CG_ERR_OPEN_FILE;
+    }
+
+    in.setDevice (&rawdata);
+    in.seek (0);
+    line = in.readAll ();
+    if (line.size () != 0)
+    {
+      QList<day_price_t> daylist;
+
+      if (parseJsonData (line, &daylist))
+      {
+        for (qint32 counter = 0; counter < daylist.size (); counter ++)
+        {
+            day_price_t price = daylist.at(counter);
+            outputline = price.date;
+            outputline += "," + price.open;
+            outputline += "," + price.high;
+            outputline += "," + price.low;
+            outputline += "," + price.close;
+            outputline += "," + price.volumn;
+            outputline += "," + price.adj_close;
+            outputline += ",00:00.00";
+            out << outputline << "\n";
+        }
+      }
+    }
+
+    rawdata.close();
+    csv.close ();
+
+    return retval;
+}
+
 // download historical data
 CG_ERR_RESULT
 IfengFeed::downloadData (QString symbol, QString timeframe, QString currency,
                          QString task, bool adjust)
 {
-  QTemporaryFile tempFile;		// temporary file	
+  QTemporaryFile csvFile;
+  QTemporaryFile rawFile;
   QString url;	
   NetService *netservice = NULL;
   CG_ERR_RESULT result = CG_ERR_OK;
@@ -276,20 +459,42 @@ IfengFeed::downloadData (QString symbol, QString timeframe, QString currency,
   }
 
   // open temporary file
-  if (!tempFile.open ())
+  if (!rawFile.open ())
   {
     result = CG_ERR_CREATE_TEMPFILE;
     setGlobalError(result, __FILE__, __LINE__);
     return result;
   }
-  tempFile.resize (0);
- 
+  rawFile.resize (0);
+   
+  url = downloadURL (symbol);
+
+  netservice = new NetService (Application_Settings->options.nettimeout, 
+                               httpHeader ().toLatin1 (), this);
+  result = netservice->httpGET (url, rawFile);
+  if (result != CG_ERR_OK)
+    goto downloadData_end;
+
+  if (GlobalProgressBar != NULL)
+    GlobalProgressBar->setValue (50);
+  qApp->processEvents(QEventLoop::ExcludeUserInputEvents, 10); 
+
+  // open temporary file
+  if (!csvFile.open ())
+  {
+    result = CG_ERR_CREATE_TEMPFILE;
+    setGlobalError(result, __FILE__, __LINE__);
+    return result;
+  }
+  csvFile.resize (0);
+  rawFile2CSV(rawFile.fileName(), csvFile.fileName());
+
   // fill symbol entry
   entry.symbol = Symbol;
   entry.timeframe = timeframe;
-  entry.csvfile = tempFile.fileName ();
-  entry.source = "GOOGLE";
-  entry.format = "GOOGLE CSV";
+  entry.csvfile = csvFile.fileName ();
+  entry.source = "IFENG";
+  entry.format = "FCG CSV";
   entry.currency = currency;
   entry.name = symbolName;
   entry.market = Market;
@@ -299,18 +504,7 @@ IfengFeed::downloadData (QString symbol, QString timeframe, QString currency,
                     entry.source % "_";
   entry.tablename += entry.timeframe;
   entry.tmptablename = "TMP_" + entry.tablename;
-  url = downloadURL (symbol);
   entry.dnlstring = url;
-  
-  netservice = new NetService (Application_Settings->options.nettimeout, 
-                               httpHeader ().toLatin1 (), this);
-  result = netservice->httpGET (url, tempFile);
-  if (result != CG_ERR_OK)
-    goto downloadData_end;
-  
-  if (GlobalProgressBar != NULL)
-    GlobalProgressBar->setValue (50);
-  qApp->processEvents(QEventLoop::ExcludeUserInputEvents, 10); 
    
   if (task == "DOWNLOAD")
     result = csv2sqlite (&entry, "CREATE");
@@ -323,7 +517,8 @@ IfengFeed::downloadData (QString symbol, QString timeframe, QString currency,
 
 downloadData_end:  
   setGlobalError(result, __FILE__, __LINE__);
-  tempFile.close ();
+  rawFile.close ();
+  csvFile.close();
   if (netservice != NULL)
     delete netservice;
   return result;  
